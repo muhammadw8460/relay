@@ -1,0 +1,61 @@
+name: CI/CD
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lint, typecheck, test, synth
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npx cdk synth --quiet
+
+  deploy-dev:
+    name: Deploy dev + smoke test
+    needs: check
+    # Skipped until the AWS_DEPLOY_ROLE_ARN repository variable is set (see README: One-time AWS setup).
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AWS_DEPLOY_ROLE_ARN != ''
+    runs-on: ubuntu-latest
+    # No `environment:` here: it would change the OIDC `sub` claim to
+    # repo:<owner>/<repo>:environment:<name>, which the deploy role doesn't trust.
+    concurrency:
+      group: deploy-dev
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write # OIDC: exchange the GitHub token for short-lived AWS credentials
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: relay-deploy-${{ github.run_id }}
+      - name: Deploy Relay-dev
+        run: npx cdk deploy Relay-dev --require-approval never --outputs-file cdk-outputs.json
+      - name: Smoke test
+        run: npm run smoke
+      - name: Integration test
+        run: npm run test:integration
