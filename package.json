@@ -1,0 +1,48 @@
+{
+  "name": "relay",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Event-driven order processing service on AWS (API Gateway, Lambda, SQS, DynamoDB) built with CDK",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "synth": "cdk synth --quiet",
+    "deploy:dev": "cdk deploy Relay-dev --require-approval never --outputs-file cdk-outputs.json",
+    "deploy:bootstrap": "cdk deploy RelayBootstrap",
+    "destroy:dev": "cdk destroy Relay-dev",
+    "smoke": "tsx scripts/smoke.ts",
+    "redrive": "tsx scripts/redrive.ts",
+    "audit": "tsx scripts/audit.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.859.0",
+    "@aws-sdk/client-sqs": "^3.859.0",
+    "@aws-sdk/lib-dynamodb": "^3.859.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-cloudformation": "^3.859.0",
+    "@eslint/js": "^9.32.0",
+    "@types/aws-lambda": "^8.10.152",
+    "@types/node": "^22.17.0",
+    "aws-cdk": "^2.1023.0",
+    "aws-cdk-lib": "^2.208.0",
+    "aws-sdk-client-mock": "^4.1.0",
+    "constructs": "^10.4.2",
+    "esbuild": "^0.25.8",
+    "eslint": "^9.32.0",
+    "globals": "^16.3.0",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.38.0",
+    "vitest": "^3.2.4"
+  }
+}
